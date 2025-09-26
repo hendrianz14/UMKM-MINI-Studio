@@ -1,3 +1,5 @@
+'use client';
+
 import { AuthCard } from "@/components/auth-card";
 import { ResetPasswordForm } from "@/components/forms/reset-password-form";
 import { motion } from "framer-motion";

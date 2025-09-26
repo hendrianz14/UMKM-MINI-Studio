@@ -1,3 +1,5 @@
+'use client';
+
 import { AuthCard } from "@/components/auth-card";
 import { SignInForm } from "@/components/forms/signin-form";
 import { motion } from "framer-motion";
