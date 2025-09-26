@@ -13,6 +13,8 @@ import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
 import { Loader2, UserPlus } from "lucide-react";
+import { FirebaseError } from "firebase/app";
+import { useRouter } from "next/navigation";
 
 const formSchema = z
   .object({
@@ -31,6 +33,7 @@ type FormValues = z.infer<typeof formSchema>;
 export function SignUpForm() {
   const auth = getClientAuth();
   const db = getClientFirestore();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const {
     register,
@@ -42,23 +45,42 @@ export function SignUpForm() {
   });
 
   const onSubmit = async (values: FormValues) => {
+    setLoading(true);
     try {
-      setLoading(true);
       const { user } = await createUserWithEmailAndPassword(auth, values.email, values.password);
       await updateProfile(user, { displayName: values.name });
-      await setDoc(doc(db, "users", user.uid), {
-        displayName: values.name,
-        email: values.email,
-        photoURL: user.photoURL ?? null,
-        credits: 50,
-        lastTrialAt: null,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+
+      try {
+        await setDoc(doc(db, "users", user.uid), {
+          displayName: values.name,
+          email: values.email,
+          photoURL: user.photoURL ?? null,
+          credits: 50,
+          lastTrialAt: null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      } catch (firestoreError) {
+        console.error(firestoreError);
+        toast.warning("Akun dibuat, namun data profil belum tersimpan. Silakan lengkapi di pengaturan setelah masuk.");
+      }
+
       toast.success("Akun berhasil dibuat");
+      router.push("/dashboard");
+      router.refresh();
     } catch (error) {
       console.error(error);
-      toast.error("Gagal membuat akun. Email mungkin sudah terdaftar.");
+      let message = "Gagal membuat akun. Silakan coba lagi.";
+      if (error instanceof FirebaseError) {
+        if (error.code === "auth/email-already-in-use") {
+          message = "Email sudah terdaftar. Silakan gunakan email lain atau masuk.";
+        } else if (error.code === "auth/weak-password") {
+          message = "Password terlalu lemah. Gunakan kombinasi minimal 6 karakter.";
+        } else {
+          message = error.message;
+        }
+      }
+      toast.error(message);
     } finally {
       setLoading(false);
     }
