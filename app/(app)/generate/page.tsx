@@ -147,7 +147,7 @@ export default function GeneratePage() {
       <Card>
         <CardHeader>
           <CardTitle>Generate Konten Produk</CardTitle>
-          <CardDescription>Unggah foto produk lalu pilih style untuk diproses oleh n8n.</CardDescription>
+          <CardDescription>Unggah foto produk lalu pilih style untuk diproses oleh studio otomatis kami.</CardDescription>
         </CardHeader>
         <CardContent>
           <div
