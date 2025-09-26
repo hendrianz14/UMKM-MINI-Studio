@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from "@/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -109,7 +111,13 @@ export default function HomePage() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.1 }}
             >
-              <Image src="https://images.unsplash.com/photo-1523365280197-f1783db9fe62" alt="Produk UMKM" fill className="object-cover" />
+              <Image
+                src="https://images.unsplash.com/photo-1523365280197-f1783db9fe62"
+                alt="Produk UMKM"
+                fill
+                unoptimized
+                className="object-cover"
+              />
             </motion.div>
           </div>
         </section>
