@@ -27,8 +27,8 @@ const featureItems = [
     icon: Palette
   },
   {
-    title: "Integrasi Workflow n8n",
-    description: "Otomasi proses kreatif Anda melalui webhook ke alur kerja n8n yang fleksibel.",
+    title: "Workflow Otomatis Studio",
+    description: "Proses generate & edit berjalan otomatis tanpa perlu repot atur integrasi manual.",
     icon: Workflow
   },
   {

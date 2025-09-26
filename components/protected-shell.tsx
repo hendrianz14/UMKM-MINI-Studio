@@ -8,11 +8,13 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "./logo";
 import { UserNav } from "./user-nav";
+import { useSession } from "@/lib/hooks/use-session";
 
 export function ProtectedShell({ children }: { children: React.ReactNode }) {
   const auth = getClientAuth();
   const [user, loading] = useAuthState(auth);
   const router = useRouter();
+  const { data: session } = useSession();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -33,10 +35,13 @@ export function ProtectedShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b bg-background/90">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/dashboard">
-            <Logo className="text-base" />
+          <Link href="/dashboard" className="font-semibold text-foreground">
+            <span className="block text-sm md:hidden">UMKM MINI STUDIO</span>
+            <span className="hidden md:inline-flex">
+              <Logo className="text-base" />
+            </span>
           </Link>
-          <nav className="flex items-center space-x-3 text-sm text-muted-foreground">
+          <nav className="hidden items-center space-x-3 text-sm text-muted-foreground md:flex">
             <Link href="/generate" className="hover:text-foreground">
               Generate
             </Link>
@@ -51,6 +56,9 @@ export function ProtectedShell({ children }: { children: React.ReactNode }) {
             </Link>
             <UserNav user={user} />
           </nav>
+          <div className="md:hidden">
+            <p className="text-xs text-muted-foreground">{session?.displayName ?? user.displayName ?? "Creator"}</p>
+          </div>
         </div>
       </header>
       <main className="container mx-auto flex w-full flex-1 flex-col gap-6 px-4 py-8">{children}</main>

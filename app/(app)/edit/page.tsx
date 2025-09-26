@@ -25,6 +25,8 @@ export default function EditPage() {
   const searchParams = useSearchParams();
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(TEMPLATE_PRESETS[0]?.id ?? null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [tone, setTone] = useState(60);
   const [luxury, setLuxury] = useState(40);
@@ -33,9 +35,25 @@ export default function EditPage() {
     const prefetched = sessionStorage.getItem("umkm-mini-studio-edit-image");
     if (prefetched) {
       setSelectedImage(prefetched);
+      setPreviewImage(prefetched);
+      setLocalPreviewUrl((current) => {
+        if (current) URL.revokeObjectURL(current);
+        return null;
+      });
       sessionStorage.removeItem("umkm-mini-studio-edit-image");
     }
   }, [searchParams]);
+
+  useEffect(
+    () => () => {
+      if (localPreviewUrl) {
+        URL.revokeObjectURL(localPreviewUrl);
+      }
+    },
+    [localPreviewUrl]
+  );
+
+  const isBlobPreview = previewImage?.startsWith("blob:") || previewImage?.startsWith("data:");
 
   const { data: gallery } = useQuery<GalleryResponse>({
     queryKey: ["gallery", { limit: 12 }],
@@ -46,6 +64,9 @@ export default function EditPage() {
   const onDrop = (accepted: File[]) => {
     const image = accepted[0];
     if (!image) return;
+    if (localPreviewUrl) {
+      URL.revokeObjectURL(localPreviewUrl);
+    }
     const storage = getClientStorage();
     const fileId = crypto.randomUUID();
     const today = new Date();
@@ -53,6 +74,10 @@ export default function EditPage() {
     const storageRef = ref(storage, path);
     const uploadTask = uploadBytesResumable(storageRef, image, { contentType: image.type });
     setUploading(true);
+    setSelectedImage(null);
+    const objectUrl = URL.createObjectURL(image);
+    setPreviewImage(objectUrl);
+    setLocalPreviewUrl(objectUrl);
 
     uploadTask.on(
       "state_changed",
@@ -65,6 +90,13 @@ export default function EditPage() {
       async () => {
         const url = await getDownloadURL(uploadTask.snapshot.ref);
         setSelectedImage(url);
+        setPreviewImage(url);
+        setLocalPreviewUrl((current) => {
+          if (current) {
+            URL.revokeObjectURL(current);
+          }
+          return null;
+        });
         toast.success("Gambar siap diedit");
         setUploading(false);
       }
@@ -189,9 +221,24 @@ export default function EditPage() {
           <CardDescription>Pilih gambar dari hasil sebelumnya atau lihat pratinjau.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {selectedImage ? (
-            <div className="overflow-hidden rounded-xl border">
-              <Image src={selectedImage} alt="Terpilih" width={600} height={400} className="h-56 w-full object-cover" />
+          {previewImage ? (
+            <div className="overflow-hidden rounded-xl border bg-muted">
+              <div className="relative aspect-square w-full md:aspect-video">
+                {previewImage && isBlobPreview ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={previewImage} alt="Terpilih" className="h-full w-full object-contain" />
+                  </>
+                ) : previewImage ? (
+                  <Image
+                    src={previewImage}
+                    alt="Terpilih"
+                    fill
+                    className="object-contain"
+                    sizes="(min-width: 768px) 600px, 100vw"
+                  />
+                ) : null}
+              </div>
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">Belum ada gambar terpilih.</p>
@@ -202,7 +249,16 @@ export default function EditPage() {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setSelectedImage(item.imageUrl)}
+                onClick={() => {
+                  setSelectedImage(item.imageUrl);
+                  setPreviewImage(item.imageUrl);
+                  setLocalPreviewUrl((current) => {
+                    if (current) {
+                      URL.revokeObjectURL(current);
+                    }
+                    return null;
+                  });
+                }}
                 className={`group overflow-hidden rounded-lg border ${selectedImage === item.imageUrl ? "border-brand" : "border-transparent"}`}
               >
                 <div className="relative h-24 w-full">

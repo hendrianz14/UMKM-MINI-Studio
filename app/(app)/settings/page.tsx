@@ -57,7 +57,7 @@ export default function SettingsPage() {
           <CardTitle>Informasi Kredit</CardTitle>
           <CardDescription>Ringkasan pemakaian kredit dan trial.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
+        <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-xl border bg-muted/40 p-4">
             <p className="text-sm text-muted-foreground">Kredit Tersedia</p>
             <p className="text-2xl font-bold">{session?.credits ?? 0}</p>
@@ -67,8 +67,9 @@ export default function SettingsPage() {
             <p className="text-2xl font-bold">{session?.lastTrialAt ? formatDate(session.lastTrialAt) : "Belum digunakan"}</p>
           </div>
           <div className="rounded-xl border bg-muted/40 p-4">
-            <p className="text-sm text-muted-foreground">Integrasi n8n</p>
-            <p className="text-xs text-muted-foreground">Hubungkan workflow untuk otomasi lanjutan.</p>
+            <p className="text-sm text-muted-foreground">ID Akun</p>
+            <p className="text-2xl font-bold break-all">{session?.uid ?? "-"}</p>
+            <p className="text-xs text-muted-foreground">Gunakan ID ini saat butuh bantuan tim support.</p>
           </div>
         </CardContent>
       </Card>
