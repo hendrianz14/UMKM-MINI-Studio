@@ -18,7 +18,7 @@ export function AppProviders({
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
         <I18nProvider messages={messages}>
           {children}
           <Toaster richColors position="top-right" />

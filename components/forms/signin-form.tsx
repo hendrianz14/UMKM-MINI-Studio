@@ -12,6 +12,8 @@ import { getClientAuth } from "@/lib/firebase/client";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { toast } from "sonner";
 import { Loader2, Mail, Sparkles } from "lucide-react";
+import { FirebaseError } from "firebase/app";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
   email: z.string().email("Email tidak valid"),
@@ -22,6 +24,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function SignInForm() {
   const auth = getClientAuth();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const {
     register,
@@ -33,13 +36,25 @@ export function SignInForm() {
   });
 
   const onSubmit = async (values: FormValues) => {
+    setLoading(true);
     try {
-      setLoading(true);
       await signInWithEmailAndPassword(auth, values.email, values.password);
       toast.success("Berhasil masuk");
+      router.push("/dashboard");
+      router.refresh();
     } catch (error) {
       console.error(error);
-      toast.error("Gagal masuk. Periksa email/password Anda.");
+      let message = "Gagal masuk. Periksa email/password Anda.";
+      if (error instanceof FirebaseError) {
+        if (error.code === "auth/invalid-credential" || error.code === "auth/wrong-password") {
+          message = "Email atau password salah.";
+        } else if (error.code === "auth/user-not-found") {
+          message = "Akun tidak ditemukan. Silakan daftar terlebih dahulu.";
+        } else {
+          message = error.message;
+        }
+      }
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -51,6 +66,8 @@ export function SignInForm() {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
       toast.success("Berhasil masuk dengan Google");
+      router.push("/dashboard");
+      router.refresh();
     } catch (error) {
       console.error(error);
       toast.error("Tidak dapat masuk dengan Google");
