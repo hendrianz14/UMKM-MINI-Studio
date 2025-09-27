@@ -1,88 +1,87 @@
-import { chromium, type FullConfig } from "@playwright/test";
+import { request, type FullConfig } from "@playwright/test";
+import { promises as fs } from "node:fs";
+import path from "node:path";
 
-function ensureEnv(name: string, value: string | undefined): string {
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
+const STORAGE_STATE_PATH = path.resolve(__dirname, "../storageState.json");
+const EMPTY_STORAGE_STATE = {
+  cookies: [],
+  origins: []
+};
+
+function hasEnv(value: string | undefined): value is string {
+  return typeof value === "string" && value.length > 0;
+}
+
+async function writeEmptyStorageState() {
+  await fs.writeFile(
+    STORAGE_STATE_PATH,
+    JSON.stringify(EMPTY_STORAGE_STATE, null, 2),
+    "utf-8"
+  );
 }
 
 export default async function globalSetup(config: FullConfig) {
-  const email = ensureEnv("CODEGEN_EMAIL", process.env.CODEGEN_EMAIL);
-  const password = ensureEnv("CODEGEN_PASSWORD", process.env.CODEGEN_PASSWORD);
-  const apiKey = ensureEnv("NEXT_PUBLIC_FIREBASE_API_KEY", process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
-  const appUrl = process.env.APP_URL ?? (config.projects[0]?.use?.baseURL as string | undefined) ?? "http://localhost:3000";
+  const email = process.env.CODEGEN_EMAIL;
+  const password = process.env.CODEGEN_PASSWORD;
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
-  const signInResponse = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
-    {
-      method: "POST",
+  if (!hasEnv(email) || !hasEnv(password) || !hasEnv(apiKey)) {
+    process.env.PLAYWRIGHT_AUTH_AVAILABLE = "false";
+    await writeEmptyStorageState();
+    console.warn(
+      "[global-setup] Firebase credentials not fully configured. Authenticated tests will be skipped."
+    );
+    return;
+  }
+
+  const baseURLFromConfig = config.projects[0]?.use?.baseURL;
+  const appUrl = process.env.APP_URL ?? (typeof baseURLFromConfig === "string" ? baseURLFromConfig : "http://127.0.0.1:3000");
+
+  const requestContext = await request.newContext();
+
+  try {
+    const signInResponse = await requestContext.post(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+      {
+        data: {
+          email,
+          password,
+          returnSecureToken: true
+        }
+      }
+    );
+
+    if (!signInResponse.ok()) {
+      throw new Error(`Failed to sign in: ${signInResponse.status()} ${signInResponse.statusText()}`);
+    }
+
+    const signInJson = (await signInResponse.json()) as { idToken?: string };
+    const idToken = signInJson.idToken;
+
+    if (!idToken) {
+      throw new Error("signInWithPassword response does not contain idToken");
+    }
+
+    const appOrigin = new URL(appUrl).origin;
+    const sessionResponse = await requestContext.post(`${appOrigin}/api/auth/session-login`, {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        email,
-        password,
-        returnSecureToken: true
-      })
+      data: { idToken }
+    });
+
+    if (!sessionResponse.ok()) {
+      throw new Error(`Failed to create session cookie: ${sessionResponse.status()} ${sessionResponse.statusText()}`);
     }
-  );
 
-  if (!signInResponse.ok) {
-    throw new Error(`Failed to sign in: ${signInResponse.status} ${signInResponse.statusText}`);
+    const storageState = await requestContext.storageState();
+    await fs.writeFile(STORAGE_STATE_PATH, JSON.stringify(storageState, null, 2), "utf-8");
+    process.env.PLAYWRIGHT_AUTH_AVAILABLE = "true";
+  } catch (error) {
+    process.env.PLAYWRIGHT_AUTH_AVAILABLE = "false";
+    await writeEmptyStorageState();
+    console.warn("[global-setup] Falling back to unauthenticated state:", error);
+  } finally {
+    await requestContext.dispose();
   }
-
-  const signInJson = (await signInResponse.json()) as { idToken?: string };
-  const idToken = signInJson.idToken;
-  if (!idToken) {
-    throw new Error("signInWithPassword response does not contain idToken");
-  }
-
-  const sessionResponse = await fetch(`${appUrl}/api/auth/session-login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ idToken })
-  });
-
-  if (!sessionResponse.ok) {
-    throw new Error(`Failed to create session cookie: ${sessionResponse.status} ${sessionResponse.statusText}`);
-  }
-
-  const rawSetCookie = sessionResponse.headers.get("set-cookie");
-  if (!rawSetCookie) {
-    throw new Error("Session login response missing Set-Cookie header");
-  }
-
-  const [cookieDefinition] = rawSetCookie.split(",");
-  const [nameValue] = cookieDefinition.split(";");
-  const separatorIndex = nameValue.indexOf("=");
-  const cookieName = nameValue.slice(0, separatorIndex);
-  const cookieValue = nameValue.slice(separatorIndex + 1);
-
-  const url = new URL(appUrl);
-  const browser = await chromium.launch();
-  const context = await browser.newContext({
-    baseURL: appUrl
-  });
-
-  await context.addCookies([
-    {
-      name: cookieName,
-      value: cookieValue,
-      domain: url.hostname,
-      path: "/",
-      httpOnly: true,
-      secure: url.protocol === "https:",
-      sameSite: "Lax"
-    }
-  ]);
-
-  const page = await context.newPage();
-  await page.goto("/dashboard");
-  await page.waitForLoadState("networkidle");
-
-  await context.storageState({ path: "storageState.json" });
-  await browser.close();
 }

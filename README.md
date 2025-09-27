@@ -73,6 +73,34 @@ pnpm test
 pnpm lint
 ```
 
+#### End-to-end (Playwright)
+
+Playwright otomatis melakukan build dan menjalankan server Next.js melalui konfigurasi `webServer`, jadi tidak perlu menyalakan server manual.
+
+```bash
+# Menjalankan seluruh e2e test tanpa login (otomatis skip yang butuh kredensial)
+pnpm exec playwright test
+
+# Opsional: verifikasi build Next.js sebelum e2e
+pnpm build
+```
+
+Untuk menjalankan skenario yang membutuhkan login, set variabel lingkungan berikut sebelum memanggil Playwright:
+
+```bash
+export NEXT_PUBLIC_FIREBASE_API_KEY="<api-key>"
+export CODEGEN_EMAIL="<bot-email>"
+export CODEGEN_PASSWORD="<bot-password>"
+
+pnpm exec playwright test
+```
+
+Global setup akan melakukan login headless (REST `signInWithPassword` → `POST /api/auth/session-login`) dan menyimpan cookie ke `storageState.json`. Jika variabel belum di-set, file kosong dibuat sehingga test yang diberi tanda "butuh login" otomatis di-skip.
+
+#### CI
+
+Contoh workflow GitHub Actions tersedia di `.github/workflows/e2e.yml`. Simpan `NEXT_PUBLIC_FIREBASE_API_KEY`, `CODEGEN_EMAIL`, dan `CODEGEN_PASSWORD` sebagai repository secrets agar skenario login berjalan di pipeline.
+
 ## Headless Login (Cara #2)
 
 Gunakan alur login headless dengan session cookie HTTP-only untuk otomatisasi (CI, Playwright, bot).
