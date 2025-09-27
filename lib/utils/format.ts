@@ -9,3 +9,14 @@ export function formatDate(value: string | number | Date, locale = "id-ID") {
     year: "numeric"
   }).format(new Date(value));
 }
+
+export function formatDateTime(value: Date | string | number, locale = "id-ID") {
+  const date = value instanceof Date ? value : new Date(value);
+  return new Intl.DateTimeFormat(locale, {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}

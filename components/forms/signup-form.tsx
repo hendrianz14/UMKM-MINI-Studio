@@ -8,7 +8,7 @@ import { Label } from "@/ui/label";
 import { Button } from "@/ui/button";
 import Link from "next/link";
 import { useState } from "react";
-import { getClientAuth, getClientFirestore } from "@/lib/firebase/client";
+import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
@@ -31,8 +31,6 @@ const formSchema = z
 type FormValues = z.infer<typeof formSchema>;
 
 export function SignUpForm() {
-  const auth = getClientAuth();
-  const db = getClientFirestore();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const {

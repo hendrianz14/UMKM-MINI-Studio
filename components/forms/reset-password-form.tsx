@@ -7,7 +7,7 @@ import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
 import { Button } from "@/ui/button";
 import { useState } from "react";
-import { getClientAuth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { toast } from "sonner";
 import { Loader2, RefreshCcw } from "lucide-react";
@@ -19,7 +19,6 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export function ResetPasswordForm() {
-  const auth = getClientAuth();
   const [loading, setLoading] = useState(false);
   const {
     register,

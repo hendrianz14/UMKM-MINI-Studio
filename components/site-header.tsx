@@ -7,11 +7,10 @@ import { Button } from "@/ui/button";
 import { useMemo } from "react";
 import { UserNav } from "./user-nav";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { getClientAuth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase";
 
 export function SiteHeader() {
   const t = useI18n();
-  const auth = getClientAuth();
   const [user] = useAuthState(auth);
 
   const navItems = useMemo(

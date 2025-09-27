@@ -7,7 +7,6 @@ import { Badge } from "@/ui/badge";
 import Image from "next/image";
 import { Button } from "@/ui/button";
 import { useDropzone } from "react-dropzone";
-import { getClientStorage } from "@/lib/firebase/client";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { Upload, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api/client";
 import { useSearchParams } from "next/navigation";
 import type { GalleryItem } from "@/lib/types";
+import { storage } from "@/lib/firebase";
 
 type GalleryResponse = {
   items: GalleryItem[];
@@ -67,7 +67,6 @@ export default function EditPage() {
     if (localPreviewUrl) {
       URL.revokeObjectURL(localPreviewUrl);
     }
-    const storage = getClientStorage();
     const fileId = crypto.randomUUID();
     const today = new Date();
     const path = `uploads/${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, "0")}/${String(today.getDate()).padStart(2, "0")}/${fileId}-${image.name}`;

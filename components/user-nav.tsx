@@ -1,6 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
+import type { User } from "firebase/auth";
+import { signOut } from "firebase/auth";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar";
 import {
@@ -11,81 +14,85 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/ui/dropdown-menu";
-import { signOut } from "firebase/auth";
-import Link from "next/link";
-import type { User } from "firebase/auth";
-import { getClientAuth } from "@/lib/firebase/client";
 import { Button } from "@/ui/button";
-import { useSession } from "@/lib/hooks/use-session";
-import { useMediaQuery } from "@/lib/hooks/use-media-query";
-import { Dialog, DialogContent, DialogTrigger } from "@/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/ui/sheet";
 import { Separator } from "@/ui/separator";
+import { auth } from "@/lib/firebase";
+import { cn } from "@/lib/utils/cn";
 
-export function UserNav({ user }: { user: User }) {
-  const { data: session } = useSession();
-  const displayName = session?.displayName ?? user.displayName ?? "UMKM Creator";
-  const email = session?.email ?? user.email ?? "-";
-  const photoURL = session?.photoURL ?? user.photoURL ?? undefined;
-  const initials = displayName?.[0]?.toUpperCase() ?? email?.[0]?.toUpperCase() ?? "U";
-  const isMobile = useMediaQuery("(max-width: 768px)") ?? false;
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+type UserNavProps = {
+  user: User;
+  profile?: {
+    displayName?: string | null;
+    email?: string | null;
+    photoURL?: string | null;
+  } | null;
+  className?: string;
+};
+
+export function UserNav({ user, profile, className }: UserNavProps) {
+  const [open, setOpen] = useState(false);
 
   const navItems = useMemo(
     () => [
       { href: "/dashboard", label: "Dashboard" },
       { href: "/generate", label: "Generate" },
-      { href: "/edit", label: "Editor" },
+      { href: "/edit", label: "Edit" },
       { href: "/gallery", label: "Gallery" },
-      { href: "/settings", label: "Settings" }
+      { href: "/settings", label: "Settings" },
+      { href: "/topup", label: "Topup" }
     ],
     []
   );
 
+  const resolvedDisplayName =
+    profile?.displayName ??
+    user.displayName ??
+    (user.email ? user.email.split("@")[0] ?? "UMKM Creator" : "UMKM Creator");
+  const resolvedEmail = profile?.email ?? user.email ?? "-";
+  const photoURL = profile?.photoURL ?? user.photoURL ?? undefined;
+  const initials = resolvedDisplayName?.[0]?.toUpperCase() ?? resolvedEmail?.[0]?.toUpperCase() ?? "U";
+
   const handleSignOut = async () => {
-    await signOut(getClientAuth());
-    setIsDialogOpen(false);
+    await signOut(auth);
+    setOpen(false);
   };
 
-  const handleClose = () => {
-    setIsDialogOpen(false);
-  };
-
-  if (isMobile) {
-    return (
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogTrigger asChild>
-          <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+  return (
+    <div className={cn("flex items-center", className)}>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <Button
+            variant="ghost"
+            className="relative h-10 w-10 rounded-full p-0 md:hidden"
+            aria-label="Buka menu profil"
+          >
             <Avatar className="h-9 w-9">
-              <AvatarImage src={photoURL ?? undefined} alt={displayName ?? "Avatar"} />
+              <AvatarImage src={photoURL} alt={resolvedDisplayName ?? "Avatar"} />
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
           </Button>
-        </DialogTrigger>
-        <DialogContent className="w-[calc(100%-2rem)] max-w-sm gap-0 overflow-hidden rounded-xl border border-border bg-background p-0">
-          <div className="flex items-center gap-3 border-b border-border px-5 py-4">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={photoURL ?? undefined} alt={displayName ?? "Avatar"} />
-              <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold">{displayName}</span>
-              <span className="text-xs text-muted-foreground">{email}</span>
-            </div>
-          </div>
-          <nav className="flex flex-col px-2 py-3">
+        </SheetTrigger>
+        <SheetContent side="left" className="flex h-full w-80 flex-col overflow-y-auto px-0 py-0">
+          <SheetHeader className="border-b px-6 py-4 text-left">
+            <SheetTitle className="text-base font-semibold">UMKM MINI STUDIO</SheetTitle>
+            <p className="text-sm text-muted-foreground">{resolvedDisplayName}</p>
+            <p className="text-xs text-muted-foreground">{resolvedEmail}</p>
+          </SheetHeader>
+          <nav className="flex flex-1 flex-col gap-1 px-2 py-4">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className="rounded-lg px-4 py-2 text-sm font-medium text-foreground transition hover:bg-accent hover:text-accent-foreground"
-                onClick={handleClose}
+                onClick={() => setOpen(false)}
               >
                 {item.label}
               </Link>
             ))}
           </nav>
           <Separator className="mx-4" />
-          <div className="px-4 py-3">
+          <div className="px-4 py-4">
             <Button
               variant="ghost"
               className="w-full justify-start text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
@@ -94,44 +101,42 @@ export function UserNav({ user }: { user: User }) {
               Sign out
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+        </SheetContent>
+      </Sheet>
 
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={photoURL ?? undefined} alt={displayName ?? "Avatar"} />
-            <AvatarFallback>{initials}</AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold">{displayName}</span>
-            <span className="text-xs text-muted-foreground">{email}</span>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {navItems.map((item) => (
-          <DropdownMenuItem asChild key={item.href}>
-            <Link href={item.href}>{item.label}</Link>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="relative hidden h-10 w-10 rounded-full p-0 md:inline-flex">
+            <Avatar className="h-9 w-9">
+              <AvatarImage src={photoURL} alt={resolvedDisplayName ?? "Avatar"} />
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">{resolvedDisplayName}</span>
+              <span className="text-xs text-muted-foreground">{resolvedEmail}</span>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {navItems.map((item) => (
+            <DropdownMenuItem asChild key={item.href}>
+              <Link href={item.href}>{item.label}</Link>
+            </DropdownMenuItem>
+          ))}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onSelect={async (event) => {
+              event.preventDefault();
+              await signOut(auth);
+            }}
+          >
+            Sign out
           </DropdownMenuItem>
-        ))}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onSelect={async (event) => {
-            event.preventDefault();
-            await signOut(getClientAuth());
-          }}
-        >
-          Sign out
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }

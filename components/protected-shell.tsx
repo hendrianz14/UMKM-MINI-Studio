@@ -1,20 +1,21 @@
 "use client";
 
-import { getClientAuth } from "@/lib/firebase/client";
+import { useEffect, useRef } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "./logo";
 import { UserNav } from "./user-nav";
-import { useSession } from "@/lib/hooks/use-session";
+import { auth } from "@/lib/firebase";
+import { ensureUserProfile } from "@/lib/ensureUserProfile";
+import { useUserProfile } from "@/lib/hooks/use-user-profile";
 
 export function ProtectedShell({ children }: { children: React.ReactNode }) {
-  const auth = getClientAuth();
   const [user, loading] = useAuthState(auth);
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: profile, displayName, loading: profileLoading, error: profileError } = useUserProfile(user);
+  const initRef = useRef(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -22,13 +23,27 @@ export function ProtectedShell({ children }: { children: React.ReactNode }) {
     }
   }, [loading, router, user]);
 
-  if (loading || !user) {
+  useEffect(() => {
+    if (!user) {
+      initRef.current = false;
+      return;
+    }
+    if (initRef.current) return;
+    initRef.current = true;
+    void ensureUserProfile(user.uid, user.email ?? "", user.displayName ?? "");
+  }, [user]);
+
+  if (loading || profileLoading || !user) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3">
         <Loader2 className="h-6 w-6 animate-spin" />
         <p className="text-sm text-muted-foreground">Memuat dashboard...</p>
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (
@@ -54,14 +69,25 @@ export function ProtectedShell({ children }: { children: React.ReactNode }) {
             <Link href="/topup" className="hover:text-foreground">
               Top-up
             </Link>
-            <UserNav user={user} />
           </nav>
-          <div className="md:hidden">
-            <p className="text-xs text-muted-foreground">{session?.displayName ?? user.displayName ?? "Creator"}</p>
-          </div>
+          <UserNav
+            user={user}
+            profile={{
+              displayName,
+              email: profile?.email ?? user.email ?? null,
+              photoURL: profile?.photoURL ?? user.photoURL ?? null
+            }}
+          />
         </div>
       </header>
-      <main className="container mx-auto flex w-full flex-1 flex-col gap-6 px-4 py-8">{children}</main>
+      <main className="container mx-auto flex w-full flex-1 flex-col gap-6 px-4 py-8">
+        {profileError ? (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-sm text-destructive">
+            Gagal memuat profil: {profileError instanceof Error ? profileError.message : String(profileError)}
+          </div>
+        ) : null}
+        {children}
+      </main>
     </div>
   );
 }

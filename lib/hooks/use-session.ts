@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { apiFetch } from "@/lib/api/client";
-import { getClientAuth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase";
 
 type SessionResponse = {
   uid: string;
@@ -16,7 +16,6 @@ type SessionResponse = {
 };
 
 export function useSession() {
-  const auth = getClientAuth();
   const [user, loading] = useAuthState(auth);
 
   return useQuery<SessionResponse>({

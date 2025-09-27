@@ -8,7 +8,7 @@ import { Label } from "@/ui/label";
 import { Button } from "@/ui/button";
 import Link from "next/link";
 import { useState } from "react";
-import { getClientAuth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { toast } from "sonner";
 import { Loader2, Mail, Sparkles } from "lucide-react";
@@ -23,7 +23,6 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export function SignInForm() {
-  const auth = getClientAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const {
