@@ -49,10 +49,12 @@ export function UserNav({ user }: { user: BasicUser }) {
   );
 
   const handleSignOut = async () => {
+
     if (isDemoMode) {
       setIsDialogOpen(false);
       return;
     }
+
 
     await signOut(getClientAuth());
     setIsDialogOpen(false);
