@@ -16,6 +16,22 @@ UMKM MINI STUDIO adalah SaaS siap deploy untuk membantu pelaku UMKM mengubah fot
 - Firebase Security Rules & contoh Firestore Indexes.
 - Vitest unit test untuk util keamanan webhook dan util kredit.
 
+## Bugfix Notes
+
+- **Navigasi tertutup layer dekoratif** – dua elemen dekorasi hero berposisi absolut tidak memiliki `pointer-events: none` sehingga menutupi klik navbar, terutama pada viewport kecil. Lapisan hero kini diberi `pointer-events-none`, prioritas `z-0`, dan header dinaikkan ke `z-50` agar interaksi selalu lolos.【F:app/page.tsx†L210-L216】【F:components/site-header.tsx†L28-L57】
+- **Menu mobile tamu tidak tersedia** – sebelum perbaikan hanya avatar pengguna login yang memunculkan Sheet. Pengunjung tanpa sesi tidak punya cara membuka menu mobile. Ditambahkan `GuestMobileNav` dengan trigger avatar sehingga menu fitur/pricing/sign-in dapat dibuka di mobile.【F:components/mobile-nav.tsx†L1-L49】【F:components/site-header.tsx†L7-L57】
+- **Inisialisasi Firebase gagal saat ENV kosong** – penggunaan non-null assertion pada `lib/firebase.ts` melempar `FirebaseError: auth/invalid-api-key` dan memblokir SSR. Kini konfigurasi divalidasi, menampilkan peringatan ramah, serta memakai fallback lokal agar UI tetap render sampai variabel lingkungan diisi benar.【F:lib/firebase.ts†L1-L56】
+
+## Cara Uji Singkat
+
+1. `pnpm install` (sekali saja) kemudian `pnpm dev`.
+2. Buka `http://localhost:3000`.
+3. Klik **Sign in** di header → halaman `/signin` harus terbuka.
+4. Klik **Sign up** → halaman `/signup` harus terbuka.
+5. Kecilkan viewport (≤768px), klik avatar/trigger di kiri atas → Sheet mobile muncul → pilih **Sign in** → berpindah ke `/signin`.
+6. Opsional: jalankan otomatisasi `pnpm exec playwright test tests/auth-navigation.spec.ts` untuk memverifikasi alur klik dasar (butuh server dev aktif).
+7. Setelah login berhasil (dengan kredensial Firebase valid), akses halaman protected `/dashboard` untuk memastikan middleware mengizinkan sesi.
+
 ## Prasyarat
 
 - Node.js 18+
@@ -171,6 +187,12 @@ curl -b cookies.txt -X POST "$APP_URL/api/auth/session-logout"
 - Jobs hanya dibuat via backend untuk menjaga atomisitas kredit.
 - Callback n8n diverifikasi dengan HMAC.
 - Firestore & Storage rules membatasi akses per user.
+
+## Known Edge Cases
+
+- Fallback konfigurasi Firebase hanya menjaga UI tetap render; autentikasi nyata tetap membutuhkan variabel `NEXT_PUBLIC_FIREBASE_*` yang valid dan domain yang diotorisasi di Firebase Console.【F:lib/firebase.ts†L13-L56】
+- Playwright global setup membutuhkan kredensial `CODEGEN_EMAIL`/`CODEGEN_PASSWORD` serta API Key Firebase untuk menjalankan tes yang mengakses dashboard. Jalankan spesifik `tests/auth-navigation.spec.ts` bila hanya ingin memverifikasi navigasi publik.【F:tests/global-setup.ts†L1-L69】【F:tests/auth-navigation.spec.ts†L1-L24】
+- Tombol Google Sign-In pada halaman masuk memerlukan provider Google diaktifkan di Firebase Auth; tanpa itu Firebase akan mengembalikan error yang ditangani sebagai toast kegagalan.【F:components/forms/signin-form.tsx†L57-L86】
 
 ## Roadmap / Ekstensi
 

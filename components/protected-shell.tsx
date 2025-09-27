@@ -14,7 +14,12 @@ import { useUserProfile } from "@/lib/hooks/use-user-profile";
 export function ProtectedShell({ children }: { children: React.ReactNode }) {
   const [user, loading] = useAuthState(auth);
   const router = useRouter();
-  const { data: profile, displayName, loading: profileLoading, error: profileError } = useUserProfile(user);
+  const {
+    data: profile,
+    displayName,
+    loading: profileLoading,
+    error: profileError
+  } = useUserProfile(user ?? null);
   const initRef = useRef(false);
 
   useEffect(() => {

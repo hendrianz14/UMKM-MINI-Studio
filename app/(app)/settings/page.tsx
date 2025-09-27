@@ -14,7 +14,14 @@ import { formatDate, formatDateTime } from "@/lib/utils/format";
 
 export default function SettingsPage() {
   const [user, authLoading] = useAuthState(auth);
-  const { data: profile, displayName, createdAtDate, lastTrialAtDate, loading: profileLoading, error } = useUserProfile(user);
+  const {
+    data: profile,
+    displayName,
+    createdAtDate,
+    lastTrialAtDate,
+    loading: profileLoading,
+    error
+  } = useUserProfile(user ?? null);
 
   const handleResetPassword = async () => {
     const email = profile?.email ?? user?.email;
