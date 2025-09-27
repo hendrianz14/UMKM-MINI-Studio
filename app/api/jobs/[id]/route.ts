@@ -4,8 +4,8 @@ import { requireUser } from "@/lib/api/auth";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { notFound } from "@/lib/api/errors";
 
-export const GET = handleApi(async (_request, { params }: { params: { id: string } }) => {
-  const decoded = await requireUser();
+export const GET = handleApi(async (request, { params }: { params: { id: string } }) => {
+  const decoded = await requireUser(request);
   const db = getAdminFirestore();
   const doc = await db.collection("jobs").doc(params.id).get();
 

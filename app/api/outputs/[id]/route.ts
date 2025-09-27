@@ -4,8 +4,8 @@ import { requireUser } from "@/lib/api/auth";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { notFound } from "@/lib/api/errors";
 
-export const DELETE = handleApi(async (_request, { params }: { params: { id: string } }) => {
-  const decoded = await requireUser();
+export const DELETE = handleApi(async (request, { params }: { params: { id: string } }) => {
+  const decoded = await requireUser(request);
   const db = getAdminFirestore();
   const docRef = db.collection("outputs").doc(params.id);
   const snapshot = await docRef.get();

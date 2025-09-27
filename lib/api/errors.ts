@@ -4,18 +4,18 @@ export class HttpError extends Error {
   }
 }
 
-export function badRequest(message: string) {
+export function badRequest(message: string): never {
   throw new HttpError(400, message);
 }
 
-export function unauthorized(message = "Unauthorized") {
+export function unauthorized(message = "Unauthorized"): never {
   throw new HttpError(401, message);
 }
 
-export function forbidden(message = "Forbidden") {
+export function forbidden(message = "Forbidden"): never {
   throw new HttpError(403, message);
 }
 
-export function notFound(message = "Not Found") {
+export function notFound(message = "Not Found"): never {
   throw new HttpError(404, message);
 }

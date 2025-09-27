@@ -3,8 +3,8 @@ import { handleApi } from "@/lib/api/response";
 import { requireUser } from "@/lib/api/auth";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 
-export const GET = handleApi(async (_request) => {
-  const decoded = await requireUser();
+export const GET = handleApi(async (request) => {
+  const decoded = await requireUser(request);
   const db = getAdminFirestore();
   const doc = await db.collection("users").doc(decoded.uid).get();
   const data = doc.data() ?? {};

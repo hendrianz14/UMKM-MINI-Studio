@@ -5,7 +5,7 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 import { Timestamp } from "firebase-admin/firestore";
 
 export const GET = handleApi(async (request) => {
-  const decoded = await requireUser();
+  const decoded = await requireUser(request);
   const db = getAdminFirestore();
   const { searchParams } = new URL(request.url);
   const limit = Number(searchParams.get("limit") ?? 20);

@@ -57,6 +57,48 @@ pnpm test
 pnpm lint
 ```
 
+## Headless Login (Cara #2)
+
+Gunakan alur login headless dengan session cookie HTTP-only untuk otomatisasi (CI, Playwright, bot).
+
+### Variabel Lingkungan
+
+- **Client**: `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_APP_ID`, `NEXT_PUBLIC_APP_URL` (opsional).
+- **Server**: gunakan salah satu: `FIREBASE_ADMIN_JSON` (string JSON service account saat lokal/dev) **atau** Workload Identity di Cloud Run tanpa env JSON.
+- **CI/Runner**: `APP_URL`, `CODEGEN_EMAIL`, `CODEGEN_PASSWORD`, `NEXT_PUBLIC_FIREBASE_API_KEY`.
+
+### Langkah uji cepat dengan cURL
+
+```bash
+API_KEY="<NEXT_PUBLIC_FIREBASE_API_KEY>"
+EMAIL="<bot-email@domain>"
+PASSWORD="<bot-password>"
+APP_URL="http://localhost:3000"  # atau staging/prod
+
+# 1) Ambil ID_TOKEN
+ID_TOKEN=$(
+  curl -s -X POST "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=$API_KEY" \
+    -H "Content-Type: application/json" \
+    -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\",\"returnSecureToken\":true}" | jq -r .idToken
+)
+
+# 2) Tukar ke session cookie
+curl -i -c cookies.txt -X POST "$APP_URL/api/auth/session-login" \
+  -H "Content-Type: application/json" \
+  -d "{\"idToken\":\"$ID_TOKEN\"}"
+
+# 3) Akses halaman protected
+curl -b cookies.txt -L "$APP_URL/dashboard" -o dashboard.html
+
+# 4) Logout
+curl -b cookies.txt -X POST "$APP_URL/api/auth/session-logout"
+```
+
+### Catatan keamanan
+
+- Cookie `secure` otomatis aktif di production (`NODE_ENV !== "development"`).
+- Jangan pernah commit service account. Simpan `FIREBASE_ADMIN_JSON` di Secret Manager (prod) atau `.env.local` (lokal).
+
 ## Struktur Penting
 
 - `app/` : Next.js App Router (landing, auth, dashboard, API routes).
