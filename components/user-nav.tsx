@@ -13,7 +13,6 @@ import {
 } from "@/ui/dropdown-menu";
 import { signOut } from "firebase/auth";
 import Link from "next/link";
-import type { User } from "firebase/auth";
 import { getClientAuth } from "@/lib/firebase/client";
 import { Button } from "@/ui/button";
 import { useSession } from "@/lib/hooks/use-session";
@@ -21,7 +20,15 @@ import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { Dialog, DialogContent, DialogTrigger } from "@/ui/dialog";
 import { Separator } from "@/ui/separator";
 
-export function UserNav({ user }: { user: User }) {
+type BasicUser = {
+  displayName?: string | null;
+  email?: string | null;
+  photoURL?: string | null;
+};
+
+const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
+export function UserNav({ user }: { user: BasicUser }) {
   const { data: session } = useSession();
   const displayName = session?.displayName ?? user.displayName ?? "UMKM Creator";
   const email = session?.email ?? user.email ?? "-";
@@ -42,6 +49,13 @@ export function UserNav({ user }: { user: User }) {
   );
 
   const handleSignOut = async () => {
+
+    if (isDemoMode) {
+      setIsDialogOpen(false);
+      return;
+    }
+
+
     await signOut(getClientAuth());
     setIsDialogOpen(false);
   };
@@ -126,7 +140,7 @@ export function UserNav({ user }: { user: User }) {
         <DropdownMenuItem
           onSelect={async (event) => {
             event.preventDefault();
-            await signOut(getClientAuth());
+            await handleSignOut();
           }}
         >
           Sign out

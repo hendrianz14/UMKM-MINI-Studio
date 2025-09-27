@@ -18,10 +18,25 @@ type SessionResponse = {
 export function useSession() {
   const auth = getClientAuth();
   const [user, loading] = useAuthState(auth);
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  const demoSession: SessionResponse | undefined = isDemoMode
+    ? {
+        uid: "demo-user",
+        displayName: "Demo Creator",
+        email: "demo@umkm-mini.studio",
+        photoURL: null,
+        credits: 999,
+        lastTrialAt: null,
+        createdAt: null
+      }
+    : undefined;
 
   return useQuery<SessionResponse>({
     queryKey: ["session"],
     queryFn: () => apiFetch<SessionResponse>("/api/auth/session"),
-    enabled: !loading && !!user
+    enabled: !isDemoMode && !loading && !!user,
+    initialData: demoSession,
+    refetchOnWindowFocus: !isDemoMode,
+    refetchOnReconnect: !isDemoMode
   });
 }
