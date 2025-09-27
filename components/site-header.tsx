@@ -13,6 +13,8 @@ export function SiteHeader() {
   const t = useI18n();
   const auth = getClientAuth();
   const [user] = useAuthState(auth);
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  const resolvedUser = user ?? (isDemoMode ? { displayName: "Demo Creator", email: "demo@umkm-mini.studio", photoURL: null } : null);
 
   const navItems = useMemo(
     () => [
@@ -44,8 +46,8 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="flex items-center space-x-3">
-          {user ? (
-            <UserNav user={user} />
+          {resolvedUser ? (
+            <UserNav user={resolvedUser} />
           ) : (
             <>
               <Button asChild variant="ghost" className="hidden sm:inline-flex">

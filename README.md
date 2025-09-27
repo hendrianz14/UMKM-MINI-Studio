@@ -41,6 +41,17 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 Untuk penggunaan emulator lokal tambahkan `NEXT_PUBLIC_USE_FIREBASE_EMULATORS=true`.
 
+### Mode Demo Tanpa Login
+
+Untuk kebutuhan demo atau pengambilan screenshot tanpa kredensial Firebase, aktifkan mode demo dengan menambahkan variabel berikut
+ke `.env.local`:
+
+```
+NEXT_PUBLIC_DEMO_MODE=true
+```
+
+Mode ini menyediakan sesi pengguna fiktif sehingga seluruh navigasi dashboard dapat diakses tanpa proses sign-in. Pastikan untuk menonaktifkannya pada lingkungan produksi.
+
 ## Menjalankan Secara Lokal
 
 ```bash

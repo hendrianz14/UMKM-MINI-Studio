@@ -2,7 +2,7 @@
 
 import { getClientAuth } from "@/lib/firebase/client";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -15,14 +15,23 @@ export function ProtectedShell({ children }: { children: React.ReactNode }) {
   const [user, loading] = useAuthState(auth);
   const router = useRouter();
   const { data: session } = useSession();
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
+  const resolvedUser = useMemo(
+    () =>
+      isDemoMode
+        ? { displayName: "Demo Creator", email: "demo@umkm-mini.studio", photoURL: null }
+        : user,
+    [isDemoMode, user]
+  );
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!isDemoMode && !loading && !user) {
       router.replace("/signin");
     }
-  }, [loading, router, user]);
+  }, [isDemoMode, loading, router, user]);
 
-  if (loading || !user) {
+  if (!isDemoMode && (loading || !user)) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3">
         <Loader2 className="h-6 w-6 animate-spin" />
@@ -54,10 +63,12 @@ export function ProtectedShell({ children }: { children: React.ReactNode }) {
             <Link href="/topup" className="hover:text-foreground">
               Top-up
             </Link>
-            <UserNav user={user} />
+            {resolvedUser && <UserNav user={resolvedUser} />}
           </nav>
           <div className="md:hidden">
-            <p className="text-xs text-muted-foreground">{session?.displayName ?? user.displayName ?? "Creator"}</p>
+            <p className="text-xs text-muted-foreground">
+              {session?.displayName ?? resolvedUser?.displayName ?? "Creator"}
+            </p>
           </div>
         </div>
       </header>
