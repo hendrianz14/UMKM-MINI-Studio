@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,11 +15,12 @@ import { toast } from "sonner";
 import { Upload, Sparkles, Copy } from "lucide-react";
 import { apiFetch } from "@/lib/api/client";
 import { useQuery } from "@tanstack/react-query";
-import { getClientStorage } from "@/lib/firebase/client";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card";
 import { Badge } from "@/ui/badge";
 import type { StudioJob } from "@/lib/types";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/ui/dialog";
+import { storage, auth } from "@/lib/firebase";
 
 const formSchema = z.object({
   productName: z.string().min(2, "Minimal 2 karakter"),
@@ -51,6 +52,15 @@ export default function GeneratePage() {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [tone, setTone] = useState<number>(50);
   const [luxury, setLuxury] = useState<number>(50);
+  const previewUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+      }
+    };
+  }, []);
 
   const {
     register,
@@ -66,10 +76,20 @@ export default function GeneratePage() {
   const onDrop = (accepted: File[]) => {
     const image = accepted[0];
     if (!image) return;
+    if (!image.type.startsWith("image/")) {
+      toast.error("File harus berupa gambar.");
+      return;
+    }
+
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+    }
+
+    const objectUrl = URL.createObjectURL(image);
+    previewUrlRef.current = objectUrl;
     setFile(image);
-    const reader = new FileReader();
-    reader.onload = () => setPreview(reader.result as string);
-    reader.readAsDataURL(image);
+    setPreview(objectUrl);
+    setUploadProgress(0);
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -85,11 +105,16 @@ export default function GeneratePage() {
       return;
     }
 
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      toast.error("Sesi berakhir. Silakan masuk kembali.");
+      return;
+    }
+
     try {
-      const storage = getClientStorage();
       const fileId = crypto.randomUUID();
       const today = new Date();
-      const path = `uploads/${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, "0")}/${String(today.getDate()).padStart(2, "0")}/${fileId}-${file.name}`;
+      const path = `uploads/${currentUser.uid}/${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, "0")}/${String(today.getDate()).padStart(2, "0")}/${fileId}-${file.name}`;
       const storageRef = ref(storage, path);
       const uploadTask = uploadBytesResumable(storageRef, file, { contentType: file.type });
 
@@ -168,8 +193,41 @@ export default function GeneratePage() {
           </div>
 
           {preview && (
-            <div className="mt-4 overflow-hidden rounded-xl border">
-              <Image src={preview} alt="Preview" width={600} height={400} className="h-60 w-full object-cover" />
+            <div className="mt-4 rounded-xl border p-3">
+              <div className="relative w-full overflow-hidden rounded-lg bg-muted">
+                <Image
+                  src={preview}
+                  alt="Preview"
+                  width={1200}
+                  height={900}
+                  className="h-auto w-full object-contain"
+                  priority
+                  unoptimized
+                />
+              </div>
+              <div className="mt-3">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">Lihat Full Screen</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-5xl">
+                    <DialogHeader>
+                      <DialogTitle>Preview Gambar</DialogTitle>
+                    </DialogHeader>
+                    <div className="relative w-full">
+                      <Image
+                        src={preview}
+                        alt="Preview Full"
+                        width={1920}
+                        height={1080}
+                        className="h-auto w-full object-contain"
+                        priority
+                        unoptimized
+                      />
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           )}
 

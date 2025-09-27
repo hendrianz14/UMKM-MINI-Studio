@@ -1,9 +1,8 @@
 "use client";
 
-import { getClientAuth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase";
 
 export async function apiFetch<T>(input: RequestInfo | URL, init: RequestInit = {}): Promise<T> {
-  const auth = getClientAuth();
   const currentUser = auth.currentUser;
   const token = currentUser ? await currentUser.getIdToken() : null;
 
