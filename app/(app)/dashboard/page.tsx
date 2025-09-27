@@ -17,7 +17,14 @@ import type { StudioJob } from "@/lib/types";
 
 export default function DashboardPage() {
   const [user, authLoading] = useAuthState(auth);
-  const { data: profile, displayName, createdAtDate, lastTrialAtDate, loading: profileLoading, error } = useUserProfile(user);
+  const {
+    data: profile,
+    displayName,
+    createdAtDate,
+    lastTrialAtDate,
+    loading: profileLoading,
+    error
+  } = useUserProfile(user ?? null);
 
   const { data: jobs, isLoading: jobsLoading } = useQuery({
     queryKey: ["jobs", { limit: 5 }],

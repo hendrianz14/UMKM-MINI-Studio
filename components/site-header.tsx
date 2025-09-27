@@ -8,6 +8,7 @@ import { useMemo } from "react";
 import { UserNav } from "./user-nav";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "@/lib/firebase";
+import { GuestMobileNav } from "./mobile-nav";
 
 export function SiteHeader() {
   const t = useI18n();
@@ -23,7 +24,7 @@ export function SiteHeader() {
   );
 
   return (
-    <header className="sticky top-0 z-30 w-full border-b border-brand/10 bg-background/70 shadow-[0_12px_40px_-18px_rgba(37,99,235,0.65)] backdrop-blur">
+    <header className="sticky top-0 z-50 w-full border-b border-brand/10 bg-background/70 shadow-[0_12px_40px_-18px_rgba(37,99,235,0.65)] backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center space-x-6 font-semibold text-foreground">
           <span className="block text-base sm:hidden">UMKM MINI STUDIO</span>
@@ -47,6 +48,7 @@ export function SiteHeader() {
             <UserNav user={user} />
           ) : (
             <>
+              <GuestMobileNav navItems={navItems} />
               <Button asChild variant="ghost" className="hidden sm:inline-flex">
                 <Link href="/signin">{t["nav.signIn"]}</Link>
               </Button>

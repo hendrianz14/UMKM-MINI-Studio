@@ -209,9 +209,9 @@ export default function HomePage() {
       <SiteHeader />
       <main className="flex-1">
         <section className="relative overflow-hidden border-b border-brand/10 bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.35),_transparent_65%)] pb-24 pt-32">
-          <div className="absolute -left-1/4 top-0 h-72 w-72 rounded-full bg-brand/20 blur-3xl" />
-          <div className="absolute -right-1/4 bottom-0 h-80 w-80 rounded-full bg-blue-900/50 blur-3xl" />
-          <div className="container mx-auto flex flex-col gap-16 px-4 md:flex-row md:items-center">
+          <div className="pointer-events-none absolute -left-1/4 top-0 z-0 h-72 w-72 rounded-full bg-brand/20 blur-3xl" aria-hidden />
+          <div className="pointer-events-none absolute -right-1/4 bottom-0 z-0 h-80 w-80 rounded-full bg-blue-900/50 blur-3xl" aria-hidden />
+          <div className="container relative z-10 mx-auto flex flex-col gap-16 px-4 md:flex-row md:items-center">
             <div className="space-y-8 md:w-1/2">
               <motion.span
                 className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-brand-foreground"
