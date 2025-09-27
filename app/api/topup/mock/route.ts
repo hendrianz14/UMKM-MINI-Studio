@@ -9,7 +9,7 @@ const schema = z.object({
 });
 
 export const POST = handleApi(async (request) => {
-  const decoded = await requireUser();
+  const decoded = await requireUser(request);
   const body = schema.parse(await request.json());
   const db = getAdminFirestore();
   const userRef = db.collection("users").doc(decoded.uid);

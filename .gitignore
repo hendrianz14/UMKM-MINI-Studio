@@ -8,3 +8,6 @@ pnpm-lock.yaml
 .DS_Store
 coverage
 artifacts
+storageState.json
+secrets/
+*.key.json

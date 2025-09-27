@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { handleApi } from "@/lib/api/response";
-import { requireUser } from "@/lib/api/auth";
+import { requireUser, verifyRequestAuth } from "@/lib/api/auth";
 import { z } from "zod";
 import { withCreditConsumption } from "@/lib/credits";
 import { getAdminFirestore } from "@/lib/firebase/admin";
@@ -25,14 +25,15 @@ const schema = z.object({
 });
 
 export const GET = handleApi(async (request, _context) => {
-  const decoded = await requireUser();
+  const auth = await verifyRequestAuth(request);
+  const userId = auth.uid;
   const db = getAdminFirestore();
   const { searchParams } = new URL(request.url);
   const limit = Number(searchParams.get("limit") ?? 20);
 
   const snapshot = await db
     .collection("jobs")
-    .where("userId", "==", decoded.uid)
+    .where("userId", "==", userId)
     .orderBy("createdAt", "desc")
     .limit(limit)
     .get();
@@ -48,7 +49,7 @@ export const GET = handleApi(async (request, _context) => {
 });
 
 export const POST = handleApi(async (request, _context) => {
-  const decoded = await requireUser();
+  const decoded = await requireUser(request);
   const json = await request.json();
   const body = schema.parse(json);
 

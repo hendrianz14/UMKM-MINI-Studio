@@ -135,8 +135,11 @@ export default function GeneratePage() {
     queryKey: ["job", jobId],
     queryFn: () => apiFetch<JobResponse>(`/api/jobs/${jobId}`),
     enabled: Boolean(jobId),
-    refetchInterval: (data) =>
-      data?.status && ["done", "failed"].includes(data.status) ? false : 4000
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      if (!status) return 4000;
+      return ["done", "failed"].includes(status) ? false : 4000;
+    }
   });
 
   const resultCaptions: string[] = jobDetail?.result?.captions ?? [];
